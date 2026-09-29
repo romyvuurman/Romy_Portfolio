@@ -1,0 +1,152 @@
+---
+title: "Airline passengers"
+author: "Romy Vuurman"
+format: revealjs
+logo: logo.png
+editor: visual
+bibliography: markup.bib
+---
+
+```{r}
+
+# Loading required libraries
+library(tidyverse)
+library(ggthemes)
+library(dygraphs) # interactive figures
+library(DT) # interactive tables
+library(renv)
+# renv::init()
+
+```
+
+## A figure of the AirPassengers dataset
+
+```{r}
+
+# Reading the data
+data <- data.frame(
+  date = seq(as.Date("1949-01-01"), as.Date("1960-12-01"), by = "month"),
+  passengers = as.numeric(AirPassengers)
+)
+
+# Making a plot
+ggplot(data, aes(x = date, y = passengers)) +
+  geom_line() +
+  labs(
+    title = "Monthly Airline Passenger Numbers, 1949–1960",
+    x = "Year",
+    y = "Passengers (thousands)"
+  ) +
+  theme_minimal()
+
+```
+
+## An interactive table
+
+```{r}
+
+data |>
+  datatable(options = list(pageLength = 25, scrollY = "500px"))
+
+```
+
+## An interactive figure
+
+```{r}
+
+dygraph(data)
+
+```
+
+## A 2-column slide
+
+::::: columns
+::: {.column width="50%"}
+Text
+:::
+
+::: {.column width="50%"}
+Text
+:::
+:::::
+
+## An aligned multi-row equation
+
+The total number of airline passengers over 12 years is 40363 thousand. To calculate the average number of passengers per year, we divide the total number of airline passengers by the 12 years. Then, $$
+\begin{align}
+12x &= 40363 \\
+x &= \frac{40363}{12} \\
+x &\approx 3363.58 \\
+\end{align}
+$$ is the sample mean.
+
+## A citation
+
+The study by @pala_comparison_2022 used the Airpassengers dataset for their analyses. This dataset contains the monthly totals of international airline passengers from 1949 to 1960.
+
+## R code displayed but not executed
+
+```{r}
+#| echo: true
+#| eval: false
+
+# Creating a plot of the data
+descriptives_passengers <- data |>
+  dplyr::summarize(
+    mean = mean(passengers),
+    sd = sd(passengers),
+    IQR = IQR(passengers),
+    min = min(passengers),
+    max = max(passengers),
+    median = median(passengers))
+print(descriptives_passengers)
+
+```
+
+## Cached and labeled R code
+
+```{r}
+#| echo: true
+#| cache: true
+#| label: airpassengers
+library(tidyverse)
+
+# Reading the data
+data <- data.frame(
+  date = seq(as.Date("1949-01-01"), as.Date("1960-12-01"), by = "month"),
+  passengers = as.numeric(AirPassengers)
+)
+
+# Making a plot
+ggplot(data, aes(x = date, y = passengers)) +
+  geom_line() +
+  labs(
+    title = "Monthly Airline Passenger Numbers, 1949–1960",
+    x = "Year",
+    y = "Passengers (thousands)"
+  ) +
+  theme_minimal()
+```
+
+## R code displayed but not executed (figure)
+
+```{r}
+#| echo: true
+#| eval: false
+
+# Making a plot
+ggplot(data, aes(x = date, y = passengers)) +
+  geom_line() +
+  labs(
+    title = "Monthly Airline Passenger Numbers, 1949–1960",
+    x = "Year",
+    y = "Passengers (thousands)"
+  ) +
+  theme_minimal()
+
+```
+
+## Reference list
+
+::: {#refs}
+:::
