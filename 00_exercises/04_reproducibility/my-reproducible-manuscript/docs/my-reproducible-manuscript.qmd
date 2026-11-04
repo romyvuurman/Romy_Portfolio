@@ -1,0 +1,79 @@
+---
+title: "My Reproducible Manuscript"
+format: pdf
+bibliography: references.bib
+author: "Romy Vuurman"
+---
+
+```{r}
+#| warning: false
+# Loading the required library
+library(ggplot2)
+
+```
+
+## Meet Quarto
+
+Quarto enables you to weave together content and executable code into a finished document. To learn more about Quarto see <https://quarto.org>.
+
+## Meet the penguins
+
+The `penguins` data from the [palmerpenguins](https://allisonhorst.github.io/palmerpenguins/) (@mhorstPalmerArchipelagoPenguins2022) package contains size measurements for 
+344 penguins from three species observed on three islands in the Palmer Archipelago, Antarctica. Want to know more about penguins? Read the book by @borborogluPenguinsNaturalHistory2015 on the natural history and conservation of penguins!
+
+![](https://allisonhorst.github.io/palmerpenguins/reference/figures/lter_penguins.png)
+
+## Results
+
+```{r}
+
+# Reading the data
+penguins <- penguins
+
+# Plot penguins
+ggplot(penguins, 
+       aes(x = flipper_len, y = bill_len)) +
+  geom_point(aes(color = species, shape = species)) +
+  scale_color_manual(values = c("darkorange", "purple", "cyan4")) +
+  labs(
+    title = "Flipper and Bill length",
+    subtitle = "Dimensions for penguins at Palmer Station LTER",
+    x = "Flipper length (mm)", y = "Bill length (mm)",
+    color = "Penguin species", shape = "Penguin species"
+    ) +
+  theme_minimal()
+
+```
+The result of my simple calculation is 
+`r 25 + 25`.
+
+There are 
+`r sum(penguins$species == "Gentoo")` 
+Adelie penguins
+and there are
+`r sum(penguins$species == "Chinstrap")` 
+Chinstrap penguins.
+
+The average flipper length is
+`r round(mean(penguins$flipper_len, na.rm = TRUE), digits = 2)` 
+mm.
+
+```{r}
+
+do_addition <- function(number1, number2) {
+        
+        # Check that arguments provided are numberic
+        if(class(number1) != "numeric" | class(number2) != "numeric") {
+                print("Error: one or more of your inputs are not numeric")
+                
+        # Perform simple addition and return the result
+        } else {
+                result <- number1 + number2
+                return(result)
+        }
+}
+do_addition(1, 3)
+
+```
+
+The function works.
