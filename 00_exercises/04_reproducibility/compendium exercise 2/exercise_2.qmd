@@ -1,0 +1,145 @@
+---
+title: "exercise_2"
+author: "Romy Vuurman"
+format: html
+---
+
+```{r}
+#| warning: false
+# Loading required libraries
+library(Hmisc)
+library(mice)
+library(ggplot2)
+
+```
+
+```{r}
+
+# Reading the data
+d1 <- sasxport.get("data/DEMO_I.xpt")
+d2 <- sasxport.get("data/BPX_I.xpt")
+d3 <- sasxport.get("data/BMX_I.xpt")
+d4 <- sasxport.get("data/GHB_I.xpt")
+d5 <- sasxport.get("data/TCHOL_I.xpt")
+
+# Selecting a subset of the data
+d1.t <- subset(d1, select = c("seqn", "riagendr", "ridageyr"))
+d2.t <- subset(d2, select = c("seqn", "bpxsy1"))
+d3.t <- subset(d3, select = c("seqn", "bmxbmi"))
+d4.t <- subset(d4, select = c("seqn", "lbxgh"))
+d5.t <- subset(d5, select = c("seqn", "lbdtcsi"))
+
+# Merging the subsets
+d <- merge(d1.t, d2.t)
+d <- merge(d, d3.t)
+d <- merge(d, d4.t)
+d <- merge(d, d5.t)
+
+```
+
+```{r}
+
+# Renaming the variables
+d$age <- d$ridageyr   # age in years at screening
+d$sex <- d$riagendr   # gender
+d$bp <- d$bpxsy1      # systolic: blood pressure (1st rdg) mm Hg
+d$bmi <- d$bmxbmi     # Body Mass Index (kg/m**2)
+d$HbA1C <- d$lbxgh    # total cholesterol (mmol/L)
+d$chol <- d$lbdtcsi   # Glycohemoglobin (%)
+
+# Replacing every value in age that is below 18 with NA
+d$age[d$age < 18] <- NA
+
+# Selecting complete cases
+dc <- cc(subset(d, select = c("age", "sex", "bmi", "HbA1C", "bp")))
+
+# Saving the clean data
+# save(dc, file = "data/clean_data.RData")
+
+```
+
+```{r}
+
+# Analysis
+model1 <- lm(bp ~ HbA1C + age + as.factor(sex), data = dc)
+summary_model1 <- summary(model1)
+# saveRDS(summary_model1, file = "analysis/summary_model1.rds")
+ci_model1 <- confint(model1)
+# saveRDS(ci_model1, file = "analysis/ci_model1.rds")
+
+model2 <- lm(bp ~ HbA1C + bmi + age + as.factor(sex), data = dc)
+summary_model2 <- summary(model2)
+# saveRDS(summary_model2, file = "analysis/summary_model2.rds")
+ci_model2 <- confint(model2)
+# saveRDS(ci_model2, file = "analysis/ci_model2.rds")
+
+```
+
+```{r}
+
+# Simulation of measurement error
+# Calculating the reference regression coefficient 
+ref <- lm(bp ~ HbA1C + bmi + age + as.factor(sex), data = dc)$coef[2]
+
+# Defining simulation settings
+n.sim <- 1e3
+perc.me.exp <- seq(0, .5, .1)
+perc.me.conf<- seq(0, .5, .1)
+
+# Generating all possible combinations of measurement error percentages
+scenarios <- expand.grid(perc.me.exp, perc.me.conf)
+
+# Calculating the variances and sample size
+var.exp <- var(dc$HbA1C)
+var.conf <- var(dc$bmi)
+n <- dim(dc)[1]
+
+# Creating an empty matrix to store simulation results
+beta.hat <- matrix(ncol = dim(scenarios)[1], nrow = n.sim)
+
+# Running simulations across all scenarios
+for (k in 1:n.sim) {
+  print(k)
+  set.seed(k)
+  for (i in 1:dim(scenarios)[1]) {
+    
+    # measurement error variances
+    var.me.exp <- var.exp * scenarios[i,1] / (1 - scenarios[i, 1])
+    var.me.conf <- var.conf * scenarios[i, 2] / (1 - scenarios[i, 2])
+    
+    # introducing measurement error into exposure and confounder
+    dc$HbA1C.me <- dc$HbA1C + rnorm(dim(dc)[1], 0, sqrt(var.me.exp) )
+    dc$bmi.me <- dc$bmi + rnorm(dim(dc)[1], 0, sqrt(var.me.conf) )
+    
+    # estimating regression model and storing coefficient
+    beta.hat[k,i] <- lm(bp ~ HbA1C.me + age + bmi.me + as.factor(sex), data = dc)$coef[2]
+  }}
+# saveRDS(beta.hat, file = "results/tables/beta_hat.rds")
+
+# Creating figure
+tot.mat <- cbind(100 * scenarios, apply(beta.hat, 2, mean))
+colnames(tot.mat) <- c("me.exp", "me.conf", "estimate")
+
+FIGURE <- ggplot(tot.mat, aes(me.exp, me.conf)) +
+  geom_tile(color="white", aes(fill = estimate)) +
+  geom_text(aes(label = round(estimate, 2))) +
+  scale_fill_gradient2(low = "#D55E00", mid = "white", high = "#56B4E9", midpoint = ref) +
+  labs(x = paste("% of total variance of HbA1c due to measurement error"),
+       y = paste("% of total variance of BMI due to measurement error")) +
+  coord_equal()+
+  scale_y_continuous(breaks = unique(tot.mat[, 1]))+
+  scale_x_continuous(breaks = unique(tot.mat[, 1]))+
+  theme(panel.background = element_rect(fill = 'white', colour = 'grey'),
+        plot.title = element_text(hjust = 0),
+        axis.ticks = element_blank(),
+        axis.title = element_text(size = 12),
+        axis.text = element_text(size = 10),
+        legend.title = element_text(size = 12),
+        legend.text = element_text(size = 10))
+FIGURE
+# ggsave("results/figures/Figure_2.tif", FIGURE)
+
+# Increasing HbA1c measurement error decreases the estimate, but increasing BMI measurement error actually increases it.
+
+```
+
